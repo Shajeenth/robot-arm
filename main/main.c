@@ -67,10 +67,7 @@ static void servo_close(void)
     servo_set_angle(60);
 }
 
-void app_main(void)
-{
-    servo_init();
-
+static void gripper(void *arg){
     while (1)
     {
         servo_open();
@@ -79,4 +76,18 @@ void app_main(void)
         servo_close();
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
+}
+
+void app_main(void)
+{
+    servo_init();
+
+    xTaskCreate(
+        gripper,
+        "grip",
+        4096,
+        NULL,
+        5,
+        NULL
+    );
 }
