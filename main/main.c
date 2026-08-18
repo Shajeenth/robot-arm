@@ -55,18 +55,28 @@ static void servo_set_angle(int angle)
     ledc_update_duty(SERVO_MODE, SERVO_CHANNEL);
 }
 
+static void servo_open(void)
+{
+    printf("OPEN\n");
+    servo_set_angle(180);
+}
+
+static void servo_close(void)
+{
+    printf("CLOSE\n");
+    servo_set_angle(60);
+}
+
 void app_main(void)
 {
     servo_init();
 
     while (1)
     {
-        printf("OPEN\n");
-        servo_set_angle(180);
+        servo_open();
         vTaskDelay(pdMS_TO_TICKS(2000));
 
-        printf("CLOSE\n");
-        servo_set_angle(60);
+        servo_close();
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }
