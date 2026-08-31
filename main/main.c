@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -28,7 +29,14 @@ static const char *TAG = "GRIPPER";
 
 typedef enum {
     GRIPPER_OPEN,
-    GRIPPER_CLOSE
+    GRIPPER_CLOSE,
+    GRIPPER_SET_POSITION
+} gripper_command_type_t;
+
+
+typedef struct {
+    gripper_command_type_t type;
+    int angle;
 } gripper_command_t;
 
 
@@ -98,18 +106,29 @@ static void gripper_task(void *pvParameters)
                 &command,
                 portMAX_DELAY))
         {
-            if (command == GRIPPER_OPEN)
+            if (command.type == GRIPPER_OPEN)
             {
                 ESP_LOGI(TAG, "OPEN");
 
                 servo_set_angle(180);
             }
 
-            else if (command == GRIPPER_CLOSE)
+            else if (command.type == GRIPPER_CLOSE)
             {
                 ESP_LOGI(TAG, "CLOSE");
 
                 servo_set_angle(60);
+            }
+
+            else if (command.type == GRIPPER_SET_POSITION)
+            {
+                ESP_LOGI(
+                    TAG,
+                    "Moving to %d degrees",
+                    command.angle
+                );
+
+                servo_set_angle(command.angle);
             }
         }
     }
@@ -144,8 +163,10 @@ static esp_err_t home_handler(httpd_req_t *req)
 
 static esp_err_t open_handler(httpd_req_t *req)
 {
-    gripper_command_t command =
-        GRIPPER_OPEN;
+    gripper_command_t command = {
+        .type = GRIPPER_OPEN,
+        .angle = 180
+    };
 
     xQueueSend(
         gripper_queue,
@@ -166,8 +187,10 @@ static esp_err_t open_handler(httpd_req_t *req)
 
 static esp_err_t close_handler(httpd_req_t *req)
 {
-    gripper_command_t command =
-        GRIPPER_CLOSE;
+    gripper_command_t command = {
+        .type = GRIPPER_CLOSE,
+        .angle = 100
+    };
 
     xQueueSend(
         gripper_queue,
@@ -180,6 +203,83 @@ static esp_err_t close_handler(httpd_req_t *req)
         "Closing",
         HTTPD_RESP_USE_STRLEN
     );
+
+    return ESP_OK;
+}
+
+static esp_err_t position_handler(httpd_req_t *req)
+{
+    char query[64];
+
+    if (httpd_req_get_url_query_str(
+            req,
+            query,
+            sizeof(query)) != ESP_OK)
+    {
+        httpd_resp_send(
+            req,
+            "Missing angle",
+            HTTPD_RESP_USE_STRLEN
+        );
+
+        return ESP_OK;
+    }
+
+
+    char angle_string[16];
+
+    if (httpd_query_key_value(
+            query,
+            "angle",
+            angle_string,
+            sizeof(angle_string)) != ESP_OK)
+    {
+        httpd_resp_send(
+            req,
+            "Missing angle",
+            HTTPD_RESP_USE_STRLEN
+        );
+
+        return ESP_OK;
+    }
+
+
+    int angle = atoi(angle_string);
+
+
+    if (angle < 0)
+        angle = 0;
+
+    if (angle > 180)
+        angle = 180;
+
+
+    ESP_LOGI(
+        TAG,
+        "Received position: %d",
+        angle
+    );
+
+
+    gripper_command_t command = {
+        .type = GRIPPER_SET_POSITION,
+        .angle = angle
+    };
+
+
+    xQueueSend(
+        gripper_queue,
+        &command,
+        portMAX_DELAY
+    );
+
+
+    httpd_resp_send(
+        req,
+        "Position set",
+        HTTPD_RESP_USE_STRLEN
+    );
+
 
     return ESP_OK;
 }
@@ -222,6 +322,12 @@ static void start_webserver(void)
         .handler = close_handler
     };
 
+    httpd_uri_t position = {
+        .uri = "/position",
+        .method = HTTP_GET,
+        .handler = position_handler
+    };
+
 
     httpd_register_uri_handler(
         server,
@@ -236,6 +342,11 @@ static void start_webserver(void)
     httpd_register_uri_handler(
         server,
         &close
+    );
+
+    httpd_register_uri_handler(
+        server,
+        &position
     );
 
 

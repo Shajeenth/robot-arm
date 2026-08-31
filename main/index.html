@@ -2,17 +2,87 @@
 <html>
 <head>
     <title>ESP32 Gripper</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 60px;
+        }
+
+        button {
+            font-size: 22px;
+            padding: 15px 30px;
+            margin: 10px;
+            cursor: pointer;
+        }
+
+        input {
+            width: 300px;
+        }
+
+        #angle {
+            font-size: 24px;
+            margin: 15px;
+        }
+    </style>
 </head>
 
 <body>
-    <h1>Robot Gripper</h1>
 
-    <button onclick="fetch('/open')">
+    <h1>🤖 Robot Gripper</h1>
+
+    <button onclick="sendCommand('/open')">
         OPEN
     </button>
 
-    <button onclick="fetch('/close')">
+    <button onclick="sendCommand('/close')">
         CLOSE
     </button>
+
+    <h2>Servo Position</h2>
+
+    <input
+        type="range"
+        min="0"
+        max="180"
+        value="90"
+        id="slider"
+        oninput="updateAngle()"
+    >
+
+    <div id="angle">90</div>
+
+    <button onclick="setPosition()">
+        SET POSITION
+    </button>
+
+
+    <script>
+
+        function sendCommand(url) {
+            fetch(url);
+        }
+
+
+        function updateAngle() {
+            let slider =
+                document.getElementById("slider");
+
+            document.getElementById("angle").textContent =
+                slider.value + "°";
+        }
+
+
+        function setPosition() {
+
+            let angle =
+                document.getElementById("slider").value;
+
+            fetch("/position?angle=" + angle);
+        }
+
+    </script>
+
 </body>
 </html>
