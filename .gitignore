@@ -1,0 +1,20 @@
+# ROS 2
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
+
+# SolidWorks temporary files
+~$*
+
+# Python
+__pycache__/
+*.pyc
+
+# Firmware
+.pio/
+build/
+sdkconfig.old
+
+# Secrets
+.env
+
