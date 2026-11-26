@@ -14,6 +14,8 @@ def generate_launch_description():
 
     urdf_path = pkg_path / 'urdf' / 'robot_arm.urdf'
 
+    rviz_config = pkg_path / 'rviz' / 'robot_arm_config.rviz'
+
     robot_description = urdf_path.read_text()
 
     return LaunchDescription([
@@ -34,9 +36,10 @@ def generate_launch_description():
         ),
 
         Node(
-            package='rviz2',
-            executable='rviz2',
-            output='screen'
+            package="rviz2",
+            executable="rviz2",
+            arguments=["-d", str(rviz_config)],
+            output="screen"
         )
 
     ])

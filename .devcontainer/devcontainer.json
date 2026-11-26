@@ -1,0 +1,17 @@
+{
+    "name": "Robot Arm Development",
+    "build": {
+        "dockerfile": "../docker/Dockerfile",
+        "context": ".."
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",
+                "ms-vscode.cmake-tools",
+                "ms-python.python"
+            ]
+        }
+    },
+    "remoteUser": "root"
+}
